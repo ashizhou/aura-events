@@ -1,0 +1,105 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Hashed password
+  name      String
+  createdAt DateTime @default(now())
+
+  // Relations
+  jobAnalyses JobAnalysis[]
+  interviews  Interview[]
+  feedback    Feedback[]
+  sessions    Session[]
+}
+
+model JobAnalysis {
+  id                  String   @id @default(cuid())
+  userId              String
+  jobDescription      String   // Original job description text
+  role                String   // Extracted role
+  level               String   // Extracted level (Junior, Mid, Senior, etc.)
+  company             String?  // Extracted company name (optional)
+  extractedSkills     String   // JSON array of technical skills
+  coreCompetencies    String   // JSON array of matched competencies from DB
+  responsibilities    String   // JSON array of key responsibilities
+  qualifications      String   // JSON array of required qualifications
+  niceToHave          String   // JSON array of nice-to-have skills
+  analyzedAt          DateTime @default(now())
+
+  // Relations
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interviews Interview[]
+
+  @@index([userId])
+  @@index([analyzedAt])
+}
+
+model Interview {
+  id            String   @id @default(cuid())
+  userId        String
+  jobAnalysisId String?  // Link to job analysis (optional for backward compatibility)
+  role          String
+  type          String
+  techstack     String   // JSON string array
+  level         String
+  questions     String   // JSON string array
+  finalized     Boolean  @default(false)
+  coverImage    String
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobAnalysis JobAnalysis? @relation(fields: [jobAnalysisId], references: [id], onDelete: SetNull)
+  feedback    Feedback[]
+
+  @@index([userId])
+  @@index([jobAnalysisId])
+  @@index([createdAt])
+}
+
+model Feedback {
+  id                   String   @id @default(cuid())
+  interviewId          String
+  userId               String
+  totalScore           Int
+  categoryScores       String   // JSON array of category objects
+  strengths            String   // JSON array of strings
+  areasForImprovement  String   // JSON array of strings
+  finalAssessment      String   @map("finalAssessment")
+  createdAt            DateTime @default(now())
+
+  // Relations
+  interview Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([interviewId])
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+}
