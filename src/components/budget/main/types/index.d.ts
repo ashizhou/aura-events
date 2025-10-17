@@ -23,6 +23,8 @@ interface Interview {
   userId: string;
   type: string;
   finalized: boolean;
+  coverImage?: string;
+  jobAnalysisId?: string;
 }
 
 interface CreateFeedbackParams {
@@ -33,9 +35,10 @@ interface CreateFeedbackParams {
 }
 
 interface User {
+  id: string;
   name: string;
   email: string;
-  id: string;
+  createdAt: string;
 }
 
 interface InterviewCardProps {
